@@ -54,6 +54,7 @@ class DataVizApp:
         try:
             response = self.model.generate_content(prompt)
             result = self._parse_gemini_response(response.text)
+            self.last_config = result  # Store for potential change requests
             return result
         except Exception as e:
             raise Exception(f"Error processing with Gemini API: {str(e)}")
