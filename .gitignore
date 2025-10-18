@@ -144,6 +144,13 @@ ENV/
 env.bak/
 venv.bak/
 
+# Generated visualizations
+*.png
+*.jpg
+*.jpeg
+*.pdf
+example_*.png
+
 # Spyder project settings
 .spyderproject
 .spyproject
