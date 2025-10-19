@@ -250,50 +250,77 @@ class GraphData(BaseModel):
         print(self.insights)
         return raw
 
-    def time_series_analysis(self, period: int = 7, forecast_steps: int = 5, start_date: str = "2023-01-01"):
-        # Only perform time series analysis if x_val is numeric
-        x = self._convert_months_to_numbers(self.x_val)
-        if all(isinstance(val, (int, float)) for val in x):
-            try:
-                dates = pd.date_range(start=start_date, periods=len(self.y_val), freq="D")
-                ts = pd.Series(self.y_val, index=dates, name=self.y_label)
-            except Exception as e:
-                print(f"Date range error: {e}")
-                ts = pd.Series(self.y_val, name=self.y_label)
-            ma = ts.rolling(window=period).mean()
-            arima = ARIMA(ts, order=(1, 1, 1)).fit()
-            forecast = arima.forecast(steps=forecast_steps)
-            # Check for enough data points for seasonal_decompose
-            if len(ts) >= 2 * period:
-                decomp = seasonal_decompose(ts, model="additive", period=period)
-                decomp_trend = decomp.trend[-5:].to_dict()
+    def time_series_analysis(self, period: int = 7, forecast_steps: int = 5, start_date: str = None):
+        import datetime
+        import pandas as pd
+        # Try to parse x_val as dates
+        try:
+            parsed_dates = pd.to_datetime(self.x_val, errors='raise')
+            if len(parsed_dates) == len(self.y_val):
+                ts = pd.Series(self.y_val, index=parsed_dates, name=self.y_label)
+                used_x_as_time = True
             else:
-                print(f"[Warning] Not enough data points for seasonal decomposition (need {2*period}, got {len(ts)}). Skipping decomposition.")
-                decomp_trend = "Not enough data for decomposition"
+                raise Exception("Length mismatch")
+        except Exception:
+            # Fallback: simulate time index
+            used_x_as_time = False
+            x = self._convert_months_to_numbers(self.x_val)
+            if all(isinstance(val, (int, float)) for val in x):
+                if start_date is not None:
+                    inferred_start = start_date
+                else:
+                    inferred_start = str(datetime.date.today())
+                dates = pd.date_range(start=inferred_start, periods=len(self.y_val), freq="D")
+                ts = pd.Series(self.y_val, index=dates, name=self.y_label)
+            else:
+                raw = "Time-series analysis not applicable for categorical X values."
+                print("\n=== Time-Series Summary ===")
+                print(raw)
+                return raw
 
-            raw = (
-                f"Moving average (last 5): {ma[-5:].to_dict()}\n"
-                f"ARIMA forecast: {forecast.to_dict()}\n"
-                f"Decomposition trend (last 5): {decomp_trend}"
-            )
-            self.summary = self._gemini_insight("time-series analysis", raw)
-
-            plt.figure(figsize=(12, 6))
-            plt.plot(ts, label="Original")
-            plt.plot(ma, label="Moving Avg")
-            plt.plot(forecast, label="ARIMA Forecast")
-            plt.title("Time-Series Analysis")
-            plt.legend()
-            plt.show()
-            print("[Info] Plot displayed for visualisation.")
-            print("\n=== Time-Series Summary ===")
-            print(self.summary)
-            return raw
+        ma = ts.rolling(window=period).mean()
+        # Restrict forecast so it does not go beyond 2026 unless data supports it
+        max_forecast_year = 2026
+        forecast_steps_final = forecast_steps
+        if used_x_as_time and hasattr(ts.index, 'year'):
+            last_date = ts.index[-1]
+            if hasattr(last_date, 'year'):
+                # Calculate how many steps until max_forecast_year
+                years_to_max = max_forecast_year - last_date.year
+                if years_to_max < 0:
+                    forecast_steps_final = 0
+                else:
+                    # Estimate steps to not exceed max_forecast_year
+                    # If daily, 365 steps per year
+                    if hasattr(ts.index, 'freqstr') and ts.index.freqstr == 'D':
+                        max_steps = years_to_max * 365
+                    else:
+                        max_steps = years_to_max * 12  # fallback: monthly
+                    forecast_steps_final = min(forecast_steps, max_steps)
+        arima = ARIMA(ts, order=(1, 1, 1)).fit()
+        forecast = arima.forecast(steps=forecast_steps_final)
+        # Check for enough data points for seasonal_decompose
+        if len(ts) >= 2 * period:
+            decomp = seasonal_decompose(ts, model="additive", period=period)
+            decomp_trend = decomp.trend[-5:].to_dict()
         else:
-            raw = "Time-series analysis not applicable for categorical X values."
-            print("\n=== Time-Series Summary ===")
-            print(raw)
-            return raw
+            print(f"[Warning] Not enough data points for seasonal decomposition (need {2*period}, got {len(ts)}). Skipping decomposition.")
+            decomp_trend = "Not enough data for decomposition"
+
+        raw = (
+            f"Moving average (last 5): {ma[-5:].to_dict()}\n"
+            f"ARIMA forecast: {forecast.to_dict()}\n"
+            f"Decomposition trend (last 5): {decomp_trend}"
+        )
+        self.summary = self._gemini_insight("time-series analysis", raw)
+
+        # Plotting removed; UI will handle display
+        if not used_x_as_time:
+            print("[Warning] X values could not be used as time index. Simulated daily time index used.")
+        print("[Info] Plot ready for UI embedding.")
+        print("\n=== Time-Series Summary ===")
+        print(self.summary)
+        return raw
 
     def clustering_classification(self, n_clusters: int = 3, classify: bool = False):
         # Only perform clustering if x_val is numeric
@@ -311,10 +338,7 @@ class GraphData(BaseModel):
 
             self.insights = self._gemini_insight("clustering/classification", raw)
 
-            plt.figure(figsize=(10, 6))
-            sns.scatterplot(x=self.x_val, y=self.y_val, hue=labels, palette="viridis")
-            plt.title("K-Means Clustering")
-            plt.show()
+            # Plotting removed; UI will handle display
 
             print("\n=== Clustering Insights ===")
             print(self.insights)
@@ -326,54 +350,8 @@ class GraphData(BaseModel):
             return raw
 
     def visualise(self, viz_type: str = "scatter"):
-        sns.set_theme(style="darkgrid", palette="mako")
-        plt.figure(figsize=(10, 6))
-        if viz_type == "histogram":
-            sns.histplot(self.y_val, kde=True, color="#0099cc")
-            plt.title("Histogram", fontsize=16)
-        elif viz_type == "bar":
-            sns.barplot(x=self.x_val[:10], y=self.y_val[:10], palette="crest")
-            plt.title("Bar Chart (first 10)", fontsize=16)
-        elif viz_type == "scatter":
-            if all(isinstance(x, (int, float)) for x in self.x_val):
-                sns.scatterplot(x=self.x_val, y=self.y_val, color="#00bfae", s=80, edgecolor="black")
-                plt.title("Scatter Plot", fontsize=16)
-            else:
-                x_jitter = np.arange(len(self.x_val)) + np.random.uniform(-0.2, 0.2, len(self.x_val))
-                sns.scatterplot(x=x_jitter, y=self.y_val, hue=self.x_val, palette="mako", s=80, edgecolor="black")
-                plt.xticks(np.arange(len(self.x_val)), self.x_val, rotation=30)
-                plt.title("Scatter Plot (categorical X with jitter)", fontsize=16)
-        elif viz_type == "box":
-            if all(isinstance(x, (int, float)) for x in self.x_val):
-                sns.boxplot(data=pd.DataFrame({self.x_label: self.x_val, self.y_label: self.y_val}), palette="rocket")
-            else:
-                sns.boxplot(y=self.y_val, palette="rocket")
-            plt.title("Box Plot", fontsize=16)
-        elif viz_type == "heatmap":
-            if all(isinstance(x, (int, float)) for x in self.x_val):
-                df_corr = pd.DataFrame({self.x_label: self.x_val, self.y_label: self.y_val})
-                corr = df_corr.corr()
-                if corr.isnull().values.any() or (corr.nunique().max() == 1):
-                    plt.text(0.5, 0.5, "Correlation not meaningful (all values same)", ha='center', va='center', fontsize=14)
-                    plt.title("Correlation Heatmap", fontsize=16)
-                else:
-                    sns.heatmap(corr, annot=True, cmap="mako", linewidths=1, linecolor="white")
-                    plt.title("Correlation Heatmap", fontsize=16)
-            else:
-                df = pd.DataFrame({self.x_label: self.x_val, self.y_label: self.y_val})
-                pivot = pd.pivot_table(df, index=self.x_label, values=self.y_label, aggfunc='count')
-                if pivot.nunique().max() == 1:
-                    plt.text(0.5, 0.5, "Frequency not meaningful (all values same)", ha='center', va='center', fontsize=14)
-                    plt.title("Frequency Heatmap (categorical X)", fontsize=16)
-                else:
-                    sns.heatmap(pivot, annot=True, cmap="crest", linewidths=1, linecolor="white")
-                    plt.title("Frequency Heatmap (categorical X)", fontsize=16)
-        else:
-            raise ValueError(f"Unsupported viz_type: {viz_type}")
-        plt.xlabel(self.x_label, fontsize=13)
-        plt.ylabel(self.y_label, fontsize=13)
-        plt.tight_layout()
-        plt.show()
+        # Plotting removed; UI will handle display
+        pass
 
     def polynomial_regression(self, degree: int = 2):
         x = self._convert_months_to_numbers(self.x_val)
@@ -382,26 +360,58 @@ class GraphData(BaseModel):
             return "Polynomial regression not applicable for categorical X values."
         y = np.array(self.y_val)
         x = np.array(x)
-        coeffs = np.polyfit(x, y, degree)
-        poly = np.poly1d(coeffs)
-        y_pred = poly(x)
-        r2 = r2_score(y, y_pred)
+        # Handle duplicate x values by aggregating y (mean for each x)
+        if len(set(x)) < len(x):
+            print("[Info] Duplicate x values detected. Aggregating y by mean for each x.")
+            import collections
+            agg = collections.defaultdict(list)
+            for xi, yi in zip(x, y):
+                agg[xi].append(yi)
+            x_agg = np.array(sorted(agg.keys()))
+            y_agg = np.array([np.mean(agg[xi]) for xi in x_agg])
+            x, y = x_agg, y_agg
+        # Check if enough data points for the degree
+        if len(x) <= degree:
+            print(f"[Warning] Not enough data points ({len(x)}) for polynomial degree {degree}.")
+            return f"Polynomial regression requires more data points than the degree."
+        try:
+            coeffs = np.polyfit(x, y, degree)
+            poly = np.poly1d(coeffs)
+            y_pred = poly(x)
+            r2 = r2_score(y, y_pred)
+        except Exception as e:
+            print(f"[Error] Polynomial regression fit failed: {e}")
+            return f"Polynomial regression fit failed: {e}"
 
-        raw = f"Coefficients (degree {degree}): {coeffs}\nR²: {r2:.4f}"
+        # Build polynomial equation string
+        eq_terms = [f"{coeff:.3g}x^{i}" if i > 1 else (f"{coeff:.3g}x" if i == 1 else f"{coeff:.3g}")
+                    for i, coeff in zip(range(degree, -1, -1), coeffs)]
+        eq_str = " + ".join(eq_terms).replace('+ -', '- ')
+
+        raw = f"Coefficients (degree {degree}): {coeffs}\nR²: {r2:.4f}\nEquation: y = {eq_str}"
         self.summary = self._gemini_insight("polynomial regression", raw)
 
-        plt.figure(figsize=(10, 6))
-        sns.scatterplot(x=x, y=y, color="steelblue")
-        plt.plot(np.sort(x), poly(np.sort(x)), color="red", label=f"Degree {degree} fit")
-        plt.title("Polynomial Regression")
-        plt.legend()
-        plt.show()
+        # Plotting removed; UI will handle display
 
         print("\n=== Polynomial Regression Summary ===")
         print(self.summary)
         return raw
 
     def gam(self, spline_df: int = 10):
+        import pandas as pd
+        import matplotlib.dates as mdates
+        # Try to parse x_val as dates for timeline labeling
+        try:
+            parsed_dates = pd.to_datetime(self.x_val, errors='raise')
+            if len(parsed_dates) == len(self.y_val):
+                x_for_plot = parsed_dates
+                used_x_as_time = True
+            else:
+                raise Exception("Length mismatch")
+        except Exception:
+            used_x_as_time = False
+            x_for_plot = self.x_val
+
         x = self._convert_months_to_numbers(self.x_val)
         if not all(isinstance(val, (int, float)) for val in x):
             print("[Warning] GAM requires numeric x values. Could not convert all months.")
@@ -419,22 +429,25 @@ class GraphData(BaseModel):
                 f"Deviance: {gam_model.deviance:.2f}"
             )
             self.insights = self._gemini_insight("GAM", raw)
-
-            plt.figure(figsize=(10, 6))
-            sns.scatterplot(x=self.x_val, y=self.y_val, color="steelblue")
-            plt.plot(self.x_val, y_pred, color="red", label="GAM fit")
-            plt.title("Generalized Additive Model (GAM)")
-            plt.legend()
-            plt.show()
-
+            # Plotting removed; UI will handle display
             print("\n=== GAM Insights ===")
             print(self.insights)
             return raw
         except Exception as e:
+            msg = str(e)
+            if "Perfect separation detected" in msg:
+                user_msg = (
+                    "GAM analysis failed due to perfect separation in your data. "
+                    "This usually happens when X values are highly regular or categorical, or Y values are perfectly separated. "
+                    "Try using more varied or continuous X values, or increase the number of data points."
+                )
+                print(f"[Warning] {user_msg}")
+                return user_msg
             print(f"[Warning] GAM analysis failed: {e}")
             return f"GAM analysis failed: {e}"
 
     def mars_approx(self, knots: Optional[List[float]] = None):
+        # Plotting removed; UI will handle display
         x = self._convert_months_to_numbers(self.x_val)
         if not all(isinstance(val, (int, float)) for val in x):
             print("[Warning] MARS approximation requires numeric x values. Could not convert all months.")
@@ -463,12 +476,6 @@ class GraphData(BaseModel):
         r2 = r2_score(y, y_pred)
         raw = f"Knots: {knots}\nSegments: {segments}\nR²: {r2:.4f}"
         self.summary = self._gemini_insight("MARS approximation", raw)
-        plt.figure(figsize=(10, 6))
-        sns.scatterplot(x=self.x_val, y=self.y_val, color="steelblue")
-        plt.plot(x, y_pred, color="red", label="Piecewise-linear fit")
-        plt.title("Simple MARS-style Approximation")
-        plt.legend()
-        plt.show()
         print("\n=== MARS Approximation Summary ===")
         print(self.summary)
         return raw
@@ -480,37 +487,37 @@ class GraphData(BaseModel):
             'January': 1, 'February': 2, 'March': 3, 'April': 4, 'May': 5, 'June': 6,
             'July': 7, 'August': 8, 'September': 9, 'October': 10, 'November': 11, 'December': 12
         }
+        # Try to convert months first
         converted = [month_map.get(str(x), x) for x in x_list]
-        if all(isinstance(x, int) for x in converted):
+        if all(isinstance(x, (int, float)) for x in converted):
             return converted
-        return x_list
+        # If not all numeric, label encode any categorical values
+        unique_vals = list(dict.fromkeys(converted))
+        label_map = {val: idx for idx, val in enumerate(unique_vals)}
+        label_encoded = [label_map[val] for val in converted]
+        return label_encoded
 
 # --- Example usage ---
 if __name__ == "__main__":
-    print("Choose input mode:")
-    print("1. CSV file\n2. JSON file\n3. Natural language prompt (Gemini)")
-    print("Enter 1, 2, or 3: [Defaulting to 3]")
-    mode = input().strip()
-    if mode not in ["1", "2", "3"]:
-        mode = "3"
 
+    # Only allow prompt-based data entry
     data = None
-    if mode == "1":
-        file_path = input("Enter CSV file path: ").strip()
-        df = pd.read_csv(file_path)
-        x_col = input(f"Enter column name for x values (options: {list(df.columns)}): ").strip()
-        y_col = input(f"Enter column name for y values (options: {list(df.columns)}): ").strip()
-        data = GraphData(
-            x_val=df[x_col].tolist(),
-            y_val=df[y_col].tolist(),
-            x_label=x_col,
-            y_label=y_col,
-            graph_type="scatter"
-        )
-    elif mode == "2":
-        file_path = input("Enter JSON file path: ").strip()
-        with open(file_path, "r") as f:
-            data_dict = json.load(f)
+    user_prompt = input("Enter your data request (e.g. 'Monthly sales for 2024'): ").strip()
+    gemini_data_prompt = (
+        f"Given the following user request, generate a Python dictionary with keys: 'x_val', 'y_val', 'x_label', 'y_label', 'graph_type'. "
+        f"Each of 'x_val' and 'y_val' should be a list of at least 8 values. "
+        f"Respond ONLY with a valid Python dictionary.\nRequest: {user_prompt}"
+    )
+    response = gemini_model.generate_content(gemini_data_prompt)
+    try:
+        resp_text = response.text.strip()
+        if resp_text.startswith("```"):
+            resp_text = resp_text.split("\n", 1)[-1] if "\n" in resp_text else resp_text
+            resp_text = resp_text.strip('`')
+        if resp_text.endswith("````"):
+            resp_text = resp_text.rsplit("````", 1)[0]
+        resp_text = resp_text.strip()
+        data_dict = eval(resp_text, {"__builtins__": {}})
         data = GraphData(
             x_val=data_dict["x_val"],
             y_val=data_dict["y_val"],
@@ -518,36 +525,9 @@ if __name__ == "__main__":
             y_label=data_dict["y_label"],
             graph_type=data_dict.get("graph_type", "scatter")
         )
-    elif mode == "3":
-        user_prompt = input("Enter your data request (e.g. 'Monthly sales for 2024'): ").strip()
-        gemini_data_prompt = (
-            f"Given the following user request, generate a Python dictionary with keys: 'x_val', 'y_val', 'x_label', 'y_label', 'graph_type'. "
-            f"Each of 'x_val' and 'y_val' should be a list of at least 8 values. "
-            f"Respond ONLY with a valid Python dictionary.\nRequest: {user_prompt}"
-        )
-        response = gemini_model.generate_content(gemini_data_prompt)
-        try:
-            resp_text = response.text.strip()
-            if resp_text.startswith("```"):
-                resp_text = resp_text.split("\n", 1)[-1] if "\n" in resp_text else resp_text
-                resp_text = resp_text.strip('`')
-            if resp_text.endswith("```"):
-                resp_text = resp_text.rsplit("````", 1)[0]
-            resp_text = resp_text.strip()
-            data_dict = eval(resp_text, {"__builtins__": {}})
-            data = GraphData(
-                x_val=data_dict["x_val"],
-                y_val=data_dict["y_val"],
-                x_label=data_dict["x_label"],
-                y_label=data_dict["y_label"],
-                graph_type=data_dict.get("graph_type", "scatter")
-            )
-            print("[Debug] Data object created from Gemini prompt:", data)
-        except Exception as e:
-            print(f"Gemini could not generate valid data: {e}\nRaw response: {response.text}")
-            exit(1)
-    else:
-        print("Invalid input mode.")
+        print("[Debug] Data object created from Gemini prompt:", data)
+    except Exception as e:
+        print(f"Gemini could not generate valid data: {e}\nRaw response: {response.text}")
         exit(1)
 
     if data is not None:
@@ -602,6 +582,7 @@ if __name__ == "__main__":
             elif func is not None:
                 print(f"[Running: {label}]")
                 func()
+                # Remove old menu simulation and stray except block. Only keep new menu loop above.
     else:
         print("[Warning] No data object was created. Please check your input and try again.")
     # Remove old menu simulation and stray except block. Only keep new menu loop above.
