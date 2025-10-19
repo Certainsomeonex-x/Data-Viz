@@ -2,6 +2,9 @@ MIT License
 
 Copyright (c) 2025 Anirudha Patnaik
 
+Project: Data-Viz
+Description: Advanced Python data analysis and visualization tool with Gemini AI integration, supporting flexible input, robust error handling, user-driven selection, and visually pleasing output. Includes statistical analysis, clustering, regression, time-series, and custom visualizations.
+
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
