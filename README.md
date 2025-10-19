@@ -6,9 +6,12 @@
 <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License">
 <img src="https://img.shields.io/badge/AI-Gemini%202.5%20Flash-purple.svg" alt="AI Powered">
 <img src="https://img.shields.io/badge/UI-CustomTkinter-orange.svg" alt="UI Framework">
+<img src="https://img.shields.io/badge/Hackathon-MLH%20HackQuest-red.svg" alt="MLH HackQuest">
 <img src="https://img.shields.io/badge/Status-Active-success.svg" alt="Status">
 
 ### *Transform Natural Language into Stunning Data Visualizations* ✨
+
+### 🏆 Built for MLH HackQuest Hackathon 2025
 
 [🚀 Features](#-features) • [📥 Installation](#-installation) • [🎯 Usage](#-usage) • [🧠 How It Works](#-how-it-works) • [👥 Contributors](#-contributors)
 
@@ -19,6 +22,10 @@
 ## 🌟 What is Data-Viz?
 
 **Data-Viz** is an advanced Python-based data analysis and visualization tool that revolutionizes how you interact with data. Simply describe your data in plain English, and watch as AI generates comprehensive statistical analyses and beautiful visualizations!
+
+> **🏆 MLH HackQuest Hackathon Project**
+> 
+> This project was created for the **Major League Hacking (MLH) HackQuest Hackathon 2025**, showcasing the power of combining AI with data science to make analytics accessible to everyone. Built with Google's Gemini 2.5 Flash API and modern Python technologies.
 
 No more wrestling with CSV files or struggling with complex data formatting—just tell the AI what you want to analyze, and it handles the rest.
 
@@ -330,7 +337,13 @@ Result: Beautiful "Jan", "Feb", "Mar" labels! ✅
 
 ## 📚 Project Facts
 
-### 🎓 Educational Value
+### � Hackathon Project
+
+**Built for Major League Hacking (MLH) HackQuest Hackathon 2025**
+
+This project demonstrates innovative use of AI in data science, combining Google's Gemini 2.5 Flash API with advanced statistical methods to democratize data analysis. Developed during the MLH HackQuest Hackathon to showcase how natural language processing can bridge the gap between complex data science and everyday users.
+
+### �🎓 Educational Value
 
 - **Learn by Doing**: See how AI interprets data requests
 - **Statistical Literacy**: Understand when to use each analysis type
@@ -475,6 +488,8 @@ Having issues? Want to share feedback?
 ### 🌟 If you found this project helpful, please consider giving it a star! ⭐
 
 **Made with ❤️ by the Data-Viz Team**
+
+**🏆 Built for MLH HackQuest Hackathon 2025 🏆**
 
 [⬆ Back to Top](#-data-viz-ai-powered-data-visualization-studio)
 
