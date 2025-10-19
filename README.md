@@ -4,7 +4,7 @@
 
 <img src="https://img.shields.io/badge/Python-3.8+-blue.svg" alt="Python Version">
 <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License">
-<img src="https://img.shields.io/badge/AI-Gemini%202.5-purple.svg" alt="AI Powered">
+<img src="https://img.shields.io/badge/AI-Gemini%202.5%20Flash-purple.svg" alt="AI Powered">
 <img src="https://img.shields.io/badge/UI-CustomTkinter-orange.svg" alt="UI Framework">
 <img src="https://img.shields.io/badge/Status-Active-success.svg" alt="Status">
 
@@ -22,11 +22,23 @@
 
 No more wrestling with CSV files or struggling with complex data formatting—just tell the AI what you want to analyze, and it handles the rest.
 
+### 🤖 Powered by Google Gemini 2.5 Flash
+
+**Data-Viz leverages the cutting-edge Google Gemini 2.5 Flash API** for intelligent natural language understanding and structured data generation. This powerful AI model:
+
+- 🚀 **Lightning-Fast Response**: Optimized for speed without compromising quality
+- 🧠 **Smart Data Understanding**: Interprets complex data requests in natural language
+- 📊 **Structured Output**: Generates properly formatted datasets with labels
+- 💡 **Context-Aware**: Understands statistical context and data relationships
+- 🎯 **High Accuracy**: Produces realistic and meaningful data distributions
+
+The Gemini 2.5 Flash model is specifically chosen for its balance of speed, cost-efficiency, and intelligence—perfect for real-time data generation and analysis workflows.
+
 ### 💡 The Big Idea
 
 We believe data analysis should be accessible to everyone, not just data scientists. Data-Viz bridges the gap between human language and data science by:
 
-- 🤖 **AI-Driven Data Generation**: Using Google's Gemini 2.5 Flash to understand your prompts
+- 🤖 **AI-Driven Data Generation**: Using Google's **Gemini 2.5 Flash API** to understand your prompts
 - 📊 **Intelligent Visualization**: Automatically selecting the best chart type for your analysis
 - 🎨 **Beautiful UI**: Modern CustomTkinter interface that's both powerful and intuitive
 - 🔬 **Advanced Analytics**: From basic statistics to ARIMA forecasting and GAM modeling
@@ -252,8 +264,9 @@ Marketing $65k, Sales $70k, HR $60k"
     ┌───────────────┴───────────────┐
     ▼                               ▼
 ┌────────────────┐         ┌────────────────────┐
-│  Gemini API    │         │  Analysis Engine   │
-│  (AI Data Gen) │────────▶│  (Datavizmain.py)  │
+│  Gemini 2.5    │         │  Analysis Engine   │
+│  Flash API     │────────▶│  (Datavizmain.py)  │
+│  (AI Data Gen) │         │                    │
 └────────────────┘         └─────────┬──────────┘
                                      │
                     ┌────────────────┴────────────────┐
@@ -268,13 +281,22 @@ Marketing $65k, Sales $70k, HR $60k"
 
 ### The Magic Behind the Scenes 🎩✨
 
-1. **Prompt Engineering** - Your natural language prompt is sent to Gemini 2.5 Flash
-2. **AI Generation** - Gemini generates structured data (x_values, y_values, labels)
-3. **Data Validation** - Pydantic models ensure data integrity
+1. **Prompt Engineering** - Your natural language prompt is sent to **Google Gemini 2.5 Flash API**
+2. **AI Generation** - Gemini 2.5 Flash interprets your intent and generates structured data (x_values, y_values, labels)
+3. **Data Validation** - Pydantic models ensure data integrity and type safety
 4. **Type Detection** - Automatic detection of numeric, categorical, or temporal data
-5. **Analysis Execution** - Selected statistical method runs on the data
+5. **Analysis Execution** - Selected statistical method runs on the validated data
 6. **Smart Labeling** - Original labels preserved (not replaced with encoded numbers!)
 7. **Plot Rendering** - matplotlib creates beautiful, properly-labeled visualizations
+
+> **🔥 Why Gemini 2.5 Flash?**
+> 
+> We chose Gemini 2.5 Flash for its exceptional balance of:
+> - ⚡ **Speed**: Near-instant responses for real-time data generation
+> - 🎯 **Accuracy**: High-quality structured output with minimal hallucinations
+> - 💰 **Cost-Efficiency**: Free tier available with generous quotas
+> - 🧠 **Intelligence**: Advanced natural language understanding
+> - 🔄 **Reliability**: Stable API with high uptime
 
 ### 🔧 Technical Process Flow
 
@@ -375,10 +397,10 @@ This project is the result of collaborative effort and inspiration from multiple
 
 ### 🌟 Special Acknowledgments
 
+- **Google Gemini Team** - For the groundbreaking **Gemini 2.5 Flash API** that powers the intelligent natural language data generation. This project wouldn't be possible without their cutting-edge AI technology and generous free tier access.
 - **Soumyadip Das** - For providing the foundational mathematical concepts and statistical analysis algorithms that power the core analysis engine
 - **Anirudha Patnaik** - For the project vision, Gemini AI integration, and overall architecture
 - **GitHub Copilot** - For assistance in implementing the CustomTkinter UI, fixing axis labeling issues, and providing code suggestions throughout development
-- **Google Gemini Team** - For the powerful AI API that makes natural language data generation possible
 - **Open Source Community** - For the amazing libraries (matplotlib, pandas, scikit-learn, statsmodels) that make this project possible
 
 ---
