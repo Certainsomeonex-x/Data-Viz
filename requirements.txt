@@ -1,0 +1,26 @@
+# Data-Viz Dependencies
+# Python 3.8+ required
+
+# UI Framework
+customtkinter>=5.2.0
+
+# Data Science & Visualization
+matplotlib>=3.7.0
+pandas>=2.0.0
+numpy>=1.24.0
+seaborn>=0.12.0
+
+# Machine Learning
+scikit-learn>=1.3.0
+
+# Statistical Analysis
+statsmodels>=0.14.0
+
+# AI Integration
+google-generativeai>=0.3.0
+
+# Data Validation
+pydantic>=2.0.0
+
+# Environment Variables
+python-dotenv>=1.0.0
