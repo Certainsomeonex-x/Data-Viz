@@ -471,7 +471,6 @@ class DataVizApp(ctk.CTk):
                     self.set_output(f"❌ MARS plot failed: {e}\nX values: {self.data.x_val}")
                     return
             # Note: Each analysis type now handles its own axis labels and formatting
-            ax.set_ylabel(self.data.y_label if self.data.y_label else "Y")
         for widget in self.plot_frame.winfo_children():
             widget.destroy()
         canvas = FigureCanvasTkAgg(fig, master=self.plot_frame)
